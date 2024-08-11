@@ -9,12 +9,10 @@ const authenticate = (req, res, next) => {
       console.error(error)
       return next(error)
     }
-    if (user) {
-      req.user = user
-      return next()
-    } else {
-      next()
-    }
+
+    user && (req.user = user)
+
+    next()
   })(req, res, next)
 }
 

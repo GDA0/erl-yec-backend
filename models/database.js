@@ -1,4 +1,4 @@
-const { User } = require('./models')
+const { User, CheckInOut } = require('./models')
 
 async function checkUsernameExistence (username) {
   try {
@@ -37,8 +37,56 @@ async function findUser (method, value) {
   }
 }
 
+async function checkIn (userId, purpose) {
+  try {
+    const checkInEntry = new CheckInOut({
+      user: userId,
+      checkInTime: new Date(),
+      purpose
+    })
+
+    const user = await User.findById(userId)
+    user.active = true
+    user.purpose = purpose
+
+    await checkInEntry.save()
+    await user.save()
+  } catch (error) {
+    console.error('Error during check-in:', error)
+    throw error
+  }
+}
+
+async function checkOut (userId, experience, targetMet) {
+  try {
+    const checkInRecord = await CheckInOut.findOne({
+      user: userId,
+      checkOutTime: { $exists: false } // Find the check-in record without a check-out time
+    })
+
+    if (!checkInRecord) {
+      throw new Error(`No active check-in found for user with ID: ${userId}`)
+    }
+
+    checkInRecord.checkOutTime = new Date()
+    checkInRecord.experience = experience
+    checkInRecord.targetMet = targetMet
+
+    const user = await User.findById(userId)
+    user.active = false
+
+    await checkInRecord.save()
+    await user.save()
+  } catch (error) {
+    console.error('Error during check-out:', error)
+    throw error
+  }
+}
+
 module.exports = {
   checkUsernameExistence,
   createUser,
-  findUser
+  findUser,
+  checkIn,
+  checkOut
 }

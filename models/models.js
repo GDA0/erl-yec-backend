@@ -1,17 +1,21 @@
 const mongoose = require('mongoose')
 const { differenceInYears } = require('date-fns')
 
-// USER
-const userSchema = new mongoose.Schema(
+const { Schema } = mongoose
+
+// USER SCHEMA
+const userSchema = new Schema(
   {
     firstName: String,
     middleName: String,
     lastName: String,
     username: String,
+    gender: String,
     dateOfBirth: Date,
     phoneNumber: String,
     password: String,
-    status: { type: String, default: 'inactive' },
+    purpose: { type: String, default: 'learn' },
+    active: { type: Boolean, default: false },
     roles: { type: [String], default: ['user'] }
   },
   { timestamps: true }
@@ -30,8 +34,24 @@ userSchema.virtual('age').get(function () {
   return differenceInYears(new Date(), this.dateOfBirth)
 })
 
+// CHECK-IN/OUT SCHEMA
+const checkInOutSchema = new Schema(
+  {
+    user: { type: Schema.Types.ObjectId, ref: 'User' },
+    date: { type: Date, default: Date.now },
+    checkInTime: Date,
+    checkOutTime: Date,
+    purpose: String,
+    experience: String,
+    targetMet: String
+  },
+  { timestamps: true }
+)
+
 const User = mongoose.model('User', userSchema)
+const CheckInOut = mongoose.model('CheckInOut', checkInOutSchema)
 
 module.exports = {
-  User
+  User,
+  CheckInOut
 }

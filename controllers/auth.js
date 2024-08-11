@@ -6,7 +6,9 @@ const jwt = require('jsonwebtoken')
 const {
   checkUsernameExistence,
   createUser,
-  findUser
+  findUser,
+  checkIn,
+  checkOut
 } = require('../models/database')
 
 const handleRegisterPost = [
@@ -81,7 +83,7 @@ const handleRegisterPost = [
       const userData = { ...otherData, username, password: hashedPassword }
       await createUser(userData)
 
-      res.status(201).json({ msg: 'Registration was successful' })
+      res.status(201).json({ msg: 'Registration was successful.' })
     } catch (error) {
       console.error(error)
       res.status(500).json({
@@ -128,7 +130,7 @@ const handleCheckInPost = [
       return res.status(400).json({ errors: errors.array() })
     }
 
-    const { username, password } = req.body
+    const { username, password, purpose } = req.body
     try {
       const user = await findUser('username', username)
       if (!user) {
@@ -152,6 +154,8 @@ const handleCheckInPost = [
         })
       }
 
+      await checkIn(user._id, purpose)
+
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
         expiresIn: '8h'
       })
@@ -169,7 +173,14 @@ const handleCheckInPost = [
 ]
 
 async function handleCheckOutPost (req, res) {
-  res.sendStatus(200)
+  const { userId, experience, targetMet } = req.body
+  try {
+    await checkOut(userId, experience, targetMet)
+    res.sendStatus(200)
+  } catch (error) {
+    console.error(error)
+    res.sendStatus(500)
+  }
 }
 
 module.exports = {

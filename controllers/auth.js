@@ -168,7 +168,12 @@ const handleCheckInPost = [
   }
 ]
 
+async function handleCheckOutPost (req, res) {
+  res.sendStatus(200)
+}
+
 module.exports = {
   handleRegisterPost,
-  handleCheckInPost
+  handleCheckInPost,
+  handleCheckOutPost
 }

@@ -16,7 +16,7 @@ const userSchema = new Schema(
     password: String,
     purpose: { type: String, default: 'learn' },
     active: { type: Boolean, default: false },
-    roles: { type: [String], default: ['user'] }
+    role: { type: String, default: 'user' }
   },
   { timestamps: true }
 )

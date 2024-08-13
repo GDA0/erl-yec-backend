@@ -14,11 +14,15 @@ const userSchema = new Schema(
     dateOfBirth: Date,
     phoneNumber: String,
     password: String,
-    purpose: { type: String, default: 'learn' },
-    active: { type: Boolean, default: false },
+    purpose: String,
+    active: Boolean,
     role: { type: String, default: 'user' }
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+  }
 )
 
 // Virtual field for full name

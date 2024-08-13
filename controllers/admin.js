@@ -6,8 +6,9 @@ const {
   checkUsernameExistence,
   createUser,
   findUser,
-  checkIn,
-  checkOut
+  findActiveUsers,
+  findUserRole,
+  findAllUsers
 } = require('../models/database')
 
 const handleRegisterPost = [
@@ -135,7 +136,16 @@ const handleCheckInPost = [
         })
       }
 
-      await checkIn(user._id, 'administer')
+      const userRole = await findUserRole(user._id)
+      if (userRole !== 'admin') {
+        return res.status(401).json({
+          errors: [
+            {
+              msg: "You're not an admin."
+            }
+          ]
+        })
+      }
 
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
         expiresIn: '8h'
@@ -153,7 +163,25 @@ const handleCheckInPost = [
   }
 ]
 
+async function handleDashboardGet (req, res) {
+  try {
+    const activeUsers = await findActiveUsers()
+    const allUsers = await findAllUsers()
+    const user = req.user
+
+    if (user) {
+      return res.json({ user, activeUsers, allUsers })
+    }
+
+    res.json({ user: null, activeUsers, allUsers })
+  } catch (error) {
+    console.error(error)
+    res.sendStatus(500)
+  }
+}
+
 module.exports = {
   handleRegisterPost,
   handleCheckInPost,
+  handleDashboardGet
 }

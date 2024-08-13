@@ -83,10 +83,64 @@ async function checkOut (userId, experience, targetMet) {
   }
 }
 
+async function findActiveUsers () {
+  try {
+    const activeUsers = await User.find({
+      active: true,
+      role: { $ne: 'admin' } // Exclude the admin
+    })
+
+    // Map through each active user to find their latest check-in time
+    const activeUsersWithCheckInTimes = await Promise.all(
+      activeUsers.map(async (user) => {
+        const checkInRecord = await CheckInOut.findOne({
+          user: user._id,
+          checkOutTime: { $exists: false }
+        })
+
+        return {
+          ...user.toObject(), // Convert Mongoose document to plain JS object
+          checkInTime: checkInRecord.checkInTime
+        }
+      })
+    )
+
+    return activeUsersWithCheckInTimes
+  } catch (error) {
+    console.error(error)
+    throw error
+  }
+}
+
+async function findUserRole (userId) {
+  try {
+    const user = await User.findById(userId)
+    return user.role
+  } catch (error) {
+    console.error(error)
+    throw error
+  }
+}
+
+async function findAllUsers () {
+  try {
+    const allUsers = await User.find({
+      role: { $ne: 'admin' }
+    })
+    return allUsers
+  } catch (error) {
+    console.error(error)
+    throw error
+  }
+}
+
 module.exports = {
   checkUsernameExistence,
   createUser,
   findUser,
   checkIn,
-  checkOut
+  checkOut,
+  findActiveUsers,
+  findUserRole,
+  findAllUsers
 }

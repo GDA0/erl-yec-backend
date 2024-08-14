@@ -8,7 +8,8 @@ const {
   findUser,
   findActiveUsers,
   findUserRole,
-  findAllUsers
+  findAllUsers,
+  checkOut
 } = require('../models/database')
 
 const handleRegisterPost = [
@@ -180,8 +181,35 @@ async function handleDashboardGet (req, res) {
   }
 }
 
+async function handleDeactivateUserPost (req, res) {
+  try {
+    const { userId } = req.body
+    await checkOut(userId, '3', 'yes')
+    res.sendStatus(200)
+  } catch (error) {
+    console.error(error)
+    res.sendStatus(500)
+  }
+}
+
+async function handleDeactivateAllActiveUsersPost (req, res) {
+  try {
+    const activeUsers = await findActiveUsers()
+    activeUsers.forEach(async (activeUser) => {
+      await checkOut(activeUser._id, '3', 'yes')
+    })
+
+    res.sendStatus(200)
+  } catch (error) {
+    console.error(error)
+    res.sendStatus(500)
+  }
+}
+
 module.exports = {
   handleRegisterPost,
   handleCheckInPost,
-  handleDashboardGet
+  handleDashboardGet,
+  handleDeactivateUserPost,
+  handleDeactivateAllActiveUsersPost
 }

@@ -1,4 +1,5 @@
 const { User, CheckInOut } = require('./models')
+const { compareDesc } = require('date-fns')
 
 async function checkUsernameExistence (username) {
   try {
@@ -59,24 +60,28 @@ async function checkIn (userId, purpose) {
 
 async function checkOut (userId, experience, targetMet) {
   try {
-    const checkInRecord = await CheckInOut.findOne({
-      user: userId,
-      checkOutTime: { $exists: false } // Find the check-in record without a check-out time
-    })
+    let user = await User.findById(userId)
 
-    if (!checkInRecord) {
-      throw new Error(`No active check-in found for user with ID: ${userId}`)
+    if (user && user.active) {
+      const checkInRecord = await CheckInOut.findOne({
+        user: userId,
+        checkOutTime: { $exists: false } // Find the check-in record without a check-out time
+      })
+
+      if (!checkInRecord) {
+        throw new Error(`No active check-in found for user with ID: ${userId}`)
+      }
+
+      checkInRecord.checkOutTime = new Date()
+      checkInRecord.experience = experience
+      checkInRecord.targetMet = targetMet
+
+      user = await User.findById(userId)
+      user.active = false
+
+      await checkInRecord.save()
+      await user.save()
     }
-
-    checkInRecord.checkOutTime = new Date()
-    checkInRecord.experience = experience
-    checkInRecord.targetMet = targetMet
-
-    const user = await User.findById(userId)
-    user.active = false
-
-    await checkInRecord.save()
-    await user.save()
   } catch (error) {
     console.error('Error during check-out:', error)
     throw error
@@ -100,9 +105,14 @@ async function findActiveUsers () {
 
         return {
           ...user.toObject(), // Convert Mongoose document to plain JS object
-          checkInTime: checkInRecord.checkInTime
+          checkInTime: checkInRecord?.checkInTime || null
         }
       })
+    )
+
+    // Sort users by check-in time in descending order (most recent first)
+    activeUsersWithCheckInTimes.sort((a, b) =>
+      compareDesc(new Date(a.checkInTime), new Date(b.checkInTime))
     )
 
     return activeUsersWithCheckInTimes

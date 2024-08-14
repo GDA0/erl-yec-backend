@@ -7,5 +7,10 @@ const auth = require('../middleware/auth')
 router.post('/register', auth, adminController.handleRegisterPost)
 router.post('/check-in', adminController.handleCheckInPost)
 router.get('/dashboard', auth, adminController.handleDashboardGet)
+router.post('/deactivate-user', adminController.handleDeactivateUserPost)
+router.post(
+  '/deactivate-all-active-users',
+  adminController.handleDeactivateAllActiveUsersPost
+)
 
 module.exports = router

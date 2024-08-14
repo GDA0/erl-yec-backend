@@ -144,6 +144,19 @@ async function findAllUsers () {
   }
 }
 
+async function findWeeklyLogs (startOfWeek, endOfWeek) {
+  try {
+    const logs = await CheckInOut.find({
+      date: { $gte: startOfWeek, $lte: endOfWeek }
+    }).populate('user')
+
+    return logs
+  } catch (error) {
+    console.error(error)
+    throw error
+  }
+}
+
 module.exports = {
   checkUsernameExistence,
   createUser,
@@ -152,5 +165,6 @@ module.exports = {
   checkOut,
   findActiveUsers,
   findUserRole,
-  findAllUsers
+  findAllUsers,
+  findWeeklyLogs
 }

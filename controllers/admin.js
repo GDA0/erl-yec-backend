@@ -1,6 +1,8 @@
 const { body, validationResult } = require('express-validator')
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const { startOfWeek, endOfWeek, format } = require('date-fns')
+const ExcelJS = require('exceljs')
 
 const {
   checkUsernameExistence,
@@ -9,7 +11,8 @@ const {
   findActiveUsers,
   findUserRole,
   findAllUsers,
-  checkOut
+  checkOut,
+  findWeeklyLogs
 } = require('../models/database')
 
 const handleRegisterPost = [
@@ -206,10 +209,66 @@ async function handleDeactivateAllActiveUsersPost (req, res) {
   }
 }
 
+async function handleGenerateWeeklyReportPost (req, res) {
+  try {
+    const today = new Date()
+    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 })
+    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 })
+
+    const logs = await findWeeklyLogs(startOfThisWeek, endOfThisWeek)
+
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('Weekly Report')
+
+    worksheet.columns = [
+      { header: 'Full Name', key: 'fullName', width: 30 },
+      { header: 'Gender', key: 'gender', width: 10 },
+      { header: 'Age', key: 'age', width: 10 },
+      { header: 'Phone Number', key: 'phoneNumber', width: 15 },
+      { header: 'Date', key: 'date', width: 15 },
+      { header: 'Check-In Time', key: 'checkInTime', width: 25 },
+      { header: 'Check-Out Time', key: 'checkOutTime', width: 25 },
+      { header: 'Purpose', key: 'purpose', width: 15 },
+      { header: 'Experience', key: 'experience', width: 15 },
+      { header: 'Target Met', key: 'targetMet', width: 15 }
+    ]
+
+    logs.forEach((entry) => {
+      worksheet.addRow({
+        fullName: entry.user.fullName,
+        gender: entry.user.gender,
+        age: entry.user.age,
+        phoneNumber: entry.user.phoneNumber,
+        date: format(entry.date, 'do MMMM'),
+        checkInTime: format(entry.checkInTime, 'h:mm a'),
+        checkOutTime: entry.checkOutTime
+          ? format(entry.checkOutTime, 'h:mm a')
+          : 'N/A',
+        purpose: entry.purpose,
+        experience: entry.experience,
+        targetMet: entry.targetMet
+      })
+    })
+
+    // Set headers and return the file
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+    await workbook.xlsx.write(res)
+    res.end()
+  } catch (error) {
+    console.error(error)
+    res.sendStatus(500)
+  }
+}
+
 module.exports = {
   handleRegisterPost,
   handleCheckInPost,
   handleDashboardGet,
   handleDeactivateUserPost,
-  handleDeactivateAllActiveUsersPost
+  handleDeactivateAllActiveUsersPost,
+  handleGenerateWeeklyReportPost
 }

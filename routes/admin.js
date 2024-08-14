@@ -12,5 +12,9 @@ router.post(
   '/deactivate-all-active-users',
   adminController.handleDeactivateAllActiveUsersPost
 )
+router.get(
+  '/generate-weekly-report',
+  adminController.handleGenerateWeeklyReportPost
+)
 
 module.exports = router
